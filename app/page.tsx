@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -690,7 +691,7 @@ export default function Home() {
 
       {/* ── Navbar ── */}
       <nav className="navbar">
-        <a href="/" className="navbar-logo">Aura</a>
+        <Link href="/" className="navbar-logo">Aura</Link>
         <ul className="navbar-links">
           <li><a href="#collection">Collection</a></li>
           <li><a href="#about">Our Story</a></li>
