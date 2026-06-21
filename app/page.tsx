@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
+import SocialCards from "@/components/ui/card-fan-carousel";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ const giftProducts = [
     id: "g1",
     name: "Luxury Discovery Set",
     description:
-      "Four signature scents in travel-size vessels, presented in an elegant linen gift box. The perfect introduction to our world.",
+      "Four signature scents in travel-size vessels, presented in an elegant linen gift box.",
     price: "89,000 IQD",
     image: "/gifts/discovery-set.png",
     tag: "Bestseller",
@@ -101,7 +102,7 @@ const giftProducts = [
     id: "g2",
     name: "Matte Black Wick Trimmer",
     description:
-      "Precision-forged stainless steel with a velvety matte finish. An essential ritual tool for the discerning candle lover.",
+      "Precision-forged stainless steel with a velvety matte finish. An essential ritual tool.",
     price: "31,500 IQD",
     image: "/gifts/wick-trimmer.png",
     tag: null,
@@ -110,7 +111,7 @@ const giftProducts = [
     id: "g3",
     name: "Custom Apothecary Matches",
     description:
-      "Hand-tipped safety matches in a botanical-print apothecary box. Striking in every sense of the word.",
+      "Hand-tipped safety matches in a botanical-print apothecary box.",
     price: "21,000 IQD",
     image: "/gifts/matches.png",
     tag: "New",
@@ -138,7 +139,7 @@ const floralProducts = [
     id: "f3",
     name: "Lavender & Pampas Grass",
     botanical: "Lavandula & Cortaderia",
-    description: "Dried French lavender paired with fluffy pampas plumes. Effortless boho elegance.",
+    description: "Dried French lavender paired with fluffy pampas plumes. Effortless elegance.",
     price: "63,000 IQD",
     image: "/florals/lavender-pampas.png",
   },
@@ -155,9 +156,62 @@ const marqueeItems = [
   "Recyclable packaging",
 ];
 
+// ─── Scroll Reveal Hook ───────────────────────────────────────────────────────
+
+function useScrollReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const elements = rootRef.current?.querySelectorAll(".reveal") ?? [];
+
+    if (prefersReduced) {
+      elements.forEach((el) => el.classList.add("visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -48px 0px" }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [rootRef]);
+}
+
+// ─── Sticky navbar scroll state ───────────────────────────────────────────────
+function useNavbarScrolled(): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return scrolled;
+}
+
+// ─── Toast Hook ───────────────────────────────────────────────────────────────
+function useToast() {
+  const [toast, setToast] = useState<{ msg: string; id: number } | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    const id = Date.now();
+    setToast({ msg, id });
+    setTimeout(() => setToast(null), 2400);
+  }, []);
+
+  return { toast, showToast };
+}
+
 // ─── Hero Carousel ────────────────────────────────────────────────────────────
 
-function HeroCarousel() {
+function HeroCarousel({ onShopClick }: { onShopClick: () => void }) {
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
 
@@ -166,7 +220,7 @@ function HeroCarousel() {
       if (animating) return;
       setAnimating(true);
       setCurrent(index);
-      setTimeout(() => setAnimating(false), 1200);
+      setTimeout(() => setAnimating(false), 1000);
     },
     [animating]
   );
@@ -181,10 +235,10 @@ function HeroCarousel() {
   const titleLines = heroSlides[current].label.split("\n");
 
   return (
-    <section className="hero-section" aria-label="Featured collection">
-      {/* Left editorial panel */}
+    <section className="hero-section" aria-label="Hero — Featured collection">
+      {/* Left editorial */}
       <div className="hero-editorial">
-        <p className="hero-eyebrow">Aura — Candles · Gifts · Florals</p>
+        <p className="hero-eyebrow">Aura — Handcrafted Luxury</p>
         <h1 className="hero-title">
           {titleLines[0]}
           <br />
@@ -192,23 +246,34 @@ function HeroCarousel() {
         </h1>
         <p className="hero-sub">
           Premium handcrafted scents, curated gifts, and botanical arrangements
-          — designed to transform your space into a sanctuary.
+          — designed to transform everyday moments into something extraordinary.
         </p>
         <div className="hero-actions">
-          <a href="#collection" className="btn-primary">
-            Explore the Collection
-          </a>
+          <button className="btn-primary" onClick={onShopClick}>
+            Shop the Collection →
+          </button>
           <a href="#about" className="btn-ghost">
-            Our Story →
+            Our Story
           </a>
+        </div>
+        {/* Trust micro-badges */}
+        <div className="hero-trust">
+          <div className="hero-trust-item">
+            <span className="hero-trust-icon">🚚</span> Free Shipping
+          </div>
+          <div className="hero-trust-item">
+            <span className="hero-trust-icon">↩️</span> Free Returns
+          </div>
+          <div className="hero-trust-item">
+            <span className="hero-trust-icon">🔒</span> Secure Checkout
+          </div>
         </div>
         <div className="hero-scroll-hint">
           <span className="hero-scroll-line" />
-          Scroll
+          Scroll to explore
         </div>
         <div className="hero-float-badge">
-          <span className="badge-icon">🌿</span>
-          <span className="badge-text">100% Natural</span>
+          <span>🌿</span> 100% Natural Ingredients
         </div>
       </div>
 
@@ -216,10 +281,7 @@ function HeroCarousel() {
       <div className="hero-image-panel">
         <div className="hero-slides">
           {heroSlides.map((slide, i) => (
-            <div
-              key={i}
-              className={`hero-slide ${i === current ? "active" : ""}`}
-            >
+            <div key={i} className={`hero-slide ${i === current ? "active" : ""}`}>
               <Image
                 src={slide.src}
                 alt={slide.label}
@@ -232,8 +294,6 @@ function HeroCarousel() {
             </div>
           ))}
         </div>
-
-        {/* Dot navigation */}
         <div className="hero-dots" role="tablist" aria-label="Slide navigation">
           {heroSlides.map((_, i) => (
             <button
@@ -251,34 +311,83 @@ function HeroCarousel() {
   );
 }
 
+// ─── Newsletter Popup ─────────────────────────────────────────────────────────
+
+function NewsletterPopup() {
+  const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (!sessionStorage.getItem("aura-nl-seen")) {
+      const t = setTimeout(() => {
+        setVisible(true);
+        sessionStorage.setItem("aura-nl-seen", "1");
+      }, 9000);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  const close = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => { setVisible(false); setClosing(false); }, 300);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="newsletter-backdrop"
+      onClick={close}
+      style={closing ? { opacity: 0, transition: "opacity 0.3s ease" } : {}}
+    >
+      <div
+        className="newsletter-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal
+        aria-label="Newsletter signup"
+        style={closing ? { opacity: 0, transform: "translateY(12px)", transition: "all 0.3s ease" } : {}}
+      >
+        <button className="newsletter-close" onClick={close} aria-label="Close">✕</button>
+        <div className="newsletter-emoji">🕯️</div>
+        <h3 className="newsletter-title">Get 10% Off</h3>
+        <p className="newsletter-desc">
+          Subscribe for exclusive offers, new arrivals, and a 10% discount on your first order.
+        </p>
+        <div className="newsletter-form">
+          <input type="email" className="newsletter-input" placeholder="your@email.com" aria-label="Email" />
+          <button className="newsletter-submit" type="button">Subscribe</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Quick View Panel ─────────────────────────────────────────────────────────
 
 function QuickViewPanel({
   product,
   onClose,
+  onAddToCart,
 }: {
   product: (typeof products)[0];
   onClose: () => void;
+  onAddToCart: (name: string) => void;
 }) {
   const [selectedColor, setSelectedColor] = useState(0);
   const [closing, setClosing] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
     setClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 350);
+    setTimeout(onClose, 300);
   }, [onClose]);
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    document.addEventListener("keydown", handleEsc);
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+    document.addEventListener("keydown", onEsc);
     document.body.classList.add("quickview-open");
     return () => {
-      document.removeEventListener("keydown", handleEsc);
+      document.removeEventListener("keydown", onEsc);
       document.body.classList.remove("quickview-open");
     };
   }, [handleClose]);
@@ -288,31 +397,18 @@ function QuickViewPanel({
       <div
         className="quickview-backdrop"
         onClick={handleClose}
-        style={closing ? { opacity: 0, transition: "opacity 0.3s ease" } : {}}
+        style={closing ? { opacity: 0, transition: "opacity 0.25s ease" } : {}}
       />
       <div
-        ref={panelRef}
         className={`quickview-panel ${closing ? "closing" : ""}`}
         role="dialog"
-        aria-modal="true"
+        aria-modal
         aria-label={`Quick view: ${product.name}`}
       >
-        <button
-          className="quickview-close"
-          onClick={handleClose}
-          aria-label="Close quick view"
-        >
-          ✕
-        </button>
+        <button className="quickview-close" onClick={handleClose} aria-label="Close quick view">✕</button>
 
         <div className="quickview-image">
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            fill
-            className="product-img"
-            sizes="520px"
-          />
+          <Image src={product.images[0]} alt={product.name} fill className="product-img" sizes="520px" />
         </div>
 
         <div className="quickview-content">
@@ -323,40 +419,42 @@ function QuickViewPanel({
 
           <span className="quickview-price">{product.price}</span>
 
-          {/* Color Swatches */}
           <div>
             <p className="quickview-label">Available Colors</p>
             <div className="quickview-colors">
-              {product.colors.map((color, i) => (
+              {product.colors.map((c, i) => (
                 <button
                   key={i}
                   className={`color-swatch ${selectedColor === i ? "selected" : ""}`}
-                  style={{ background: color }}
+                  style={{ background: c, border: "2.5px solid " + (c === "#FFFFFF" || c === "#F5F0E8" ? "#E5E7EB" : "transparent") }}
                   onClick={() => setSelectedColor(i)}
-                  aria-label={`Select color ${i + 1}`}
+                  aria-label={`Color ${i + 1}`}
                 />
               ))}
             </div>
           </div>
 
-          {/* Occasion Tags */}
           <div>
             <p className="quickview-label">Perfect For</p>
             <div className="quickview-tags">
               {product.occasions.map((tag) => (
-                <span key={tag} className="occasion-tag">
-                  {tag}
-                </span>
+                <span key={tag} className="occasion-tag">{tag}</span>
               ))}
             </div>
           </div>
 
           <button
             className="quickview-add"
-            aria-label={`Add ${product.name} to cart`}
+            onClick={() => { onAddToCart(product.name); handleClose(); }}
           >
             Add to Cart
           </button>
+
+          <div className="trust-badges">
+            <div className="trust-badge"><span className="trust-badge-icon">🔒</span> Secure Payment</div>
+            <div className="trust-badge"><span className="trust-badge-icon">🚚</span> Free Shipping</div>
+            <div className="trust-badge"><span className="trust-badge-icon">↩️</span> Easy Returns</div>
+          </div>
         </div>
       </div>
     </>
@@ -369,78 +467,95 @@ function ProductCard({
   product,
   index,
   onQuickView,
+  onAddToCart,
 }: {
   product: (typeof products)[0];
   index: number;
-  onQuickView: (product: (typeof products)[0]) => void;
+  onQuickView: (p: (typeof products)[0]) => void;
+  onAddToCart: (name: string) => void;
 }) {
   const [imgIndex, setImgIndex] = useState(0);
+  const [wishlisted, setWishlisted] = useState(false);
+
+  const delayClass = index < 3 ? `reveal-delay-${index + 1}` : "";
+
+  const tagClass =
+    product.tag === "New"
+      ? "tag-new"
+      : product.tag === "Popular"
+        ? "tag-popular"
+        : "";
 
   return (
-    <article className="product-card">
-      {product.tag && <span className="product-tag">{product.tag}</span>}
+    <article className={`product-card reveal ${delayClass}`}>
+      {product.tag && (
+        <span className={`product-tag ${tagClass}`}>{product.tag}</span>
+      )}
+
+      <button
+        className={`wishlist-btn ${wishlisted ? "active" : ""}`}
+        onClick={() => setWishlisted(!wishlisted)}
+        aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+      >
+        {wishlisted ? "♥" : "♡"}
+      </button>
 
       <div
         className="product-img-wrap"
         role="button"
         tabIndex={0}
-        aria-label={`${product.name} — click to change photo`}
+        aria-label={`${product.name} image`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") setImgIndex((imgIndex + 1) % product.images.length);
+        }}
       >
         <Image
           key={imgIndex}
           src={product.images[imgIndex]}
           alt={product.name}
           fill
+          loading="lazy"
           className="product-img"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         <div className="product-img-hint">
           <button
             className="product-quickview-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickView(product);
-            }}
+            onClick={(e) => { e.stopPropagation(); onQuickView(product); }}
           >
             Quick View
           </button>
-          <span
-            style={{
-              fontSize: "0.62rem",
-              letterSpacing: "0.15em",
-              opacity: 0.7,
-              cursor: "pointer",
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setImgIndex((imgIndex + 1) % product.images.length);
-            }}
-          >
-            ↻ Alternate View
-          </span>
         </div>
-        <div className="product-img-dots">
-          {product.images.map((_, i) => (
-            <span
-              key={i}
-              className={`product-img-dot ${i === imgIndex ? "active" : ""}`}
-            />
-          ))}
-        </div>
+        {product.images.length > 1 && (
+          <div className="product-img-dots">
+            {product.images.map((_, i) => (
+              <span
+                key={i}
+                className={`product-img-dot ${i === imgIndex ? "active" : ""}`}
+                onClick={() => setImgIndex(i)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="product-info">
-        <p className="product-number">
-          No. {String(index + 1).padStart(2, "0")}
-        </p>
+        <p className="product-number">No. {String(index + 1).padStart(2, "0")}</p>
         <div>
           <h3 className="product-name">{product.name}</h3>
           <p className="product-scent">{product.scent}</p>
         </div>
+        {!product.tag && (
+          <div className="stock-indicator">
+            <span className="stock-dot" />
+            Low Stock
+          </div>
+        )}
         <div className="product-bottom">
           <span className="product-price">{product.price}</span>
           <button
             className="btn-add"
+            onClick={() => onAddToCart(product.name)}
             aria-label={`Add ${product.name} to cart`}
           >
             Add to Cart
@@ -451,45 +566,14 @@ function ProductCard({
   );
 }
 
-// ─── Gift Shop Section ────────────────────────────────────────────────────────
-
-function GiftShopSection() {
-  return (
-    <section id="gifts" className="giftshop-section">
-      <div className="giftshop-header">
-        <div>
-          <p className="section-eyebrow">The Gift Shop</p>
-          <h2 className="section-title">
-            Give the Gift of <em>Glow</em>
-          </h2>
-        </div>
-        <p className="section-sub">
-          Thoughtfully curated accessories and sets — because the best gifts
-          come wrapped in warmth.
-        </p>
-      </div>
-      <div className="giftshop-divider" />
-
-      <div className="giftshop-grid">
-        {/* Featured large card */}
-        <div className="giftshop-featured">
-          <GiftCard product={giftProducts[0]} />
-        </div>
-
-        {/* Stacked smaller cards */}
-        <div className="giftshop-stack">
-          <GiftCard product={giftProducts[1]} />
-          <GiftCard product={giftProducts[2]} />
-        </div>
-      </div>
-    </section>
-  );
-}
+// ─── Gift Card ────────────────────────────────────────────────────────────────
 
 function GiftCard({
   product,
+  onAddToCart,
 }: {
   product: (typeof giftProducts)[0];
+  onAddToCart: (name: string) => void;
 }) {
   return (
     <article className="gift-card">
@@ -499,8 +583,9 @@ function GiftCard({
           src={product.image}
           alt={product.name}
           fill
+          loading="lazy"
           className="gift-card-img"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 40vw"
+          sizes="(max-width: 640px) 100vw, 40vw"
         />
       </div>
       <div className="gift-card-info">
@@ -510,6 +595,7 @@ function GiftCard({
           <span className="gift-card-price">{product.price}</span>
           <button
             className="btn-add-gift"
+            onClick={() => onAddToCart(product.name)}
             aria-label={`Add ${product.name} to cart`}
           >
             Add to Cart
@@ -520,211 +606,255 @@ function GiftCard({
   );
 }
 
-// ─── Floral Section ───────────────────────────────────────────────────────────
+// ─── Toast Component ──────────────────────────────────────────────────────────
 
-function FloralSection() {
+function Toast({ msg }: { msg: string }) {
   return (
-    <section id="florals" className="floral-section">
-      <div className="floral-header">
-        <p className="section-eyebrow">Botanical Studio</p>
-        <h2 className="section-title">
-          Floral <em>Arrangements</em>
-        </h2>
-        <p className="section-sub">
-          Hand-selected blooms and dried botanicals — each arrangement is a
-          living work of art for your space.
-        </p>
-      </div>
-
-      <div className="floral-grid">
-        {floralProducts.map((product) => (
-          <article key={product.id} className="floral-card">
-            <div className="floral-card-img-wrap">
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                className="floral-card-img"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
-            </div>
-            <div className="floral-card-info">
-              <span className="floral-card-botanical">
-                {product.botanical}
-              </span>
-              <h3 className="floral-card-name">{product.name}</h3>
-              <p className="floral-card-desc">{product.description}</p>
-              <div className="floral-card-bottom">
-                <span className="floral-card-price">{product.price}</span>
-                <button
-                  className="btn-add-floral"
-                  aria-label={`Add ${product.name} to cart`}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+    <div className="toast" role="status" aria-live="polite">
+      <span className="toast-icon">✓</span>
+      {msg} added to cart
+    </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [quickViewProduct, setQuickViewProduct] = useState<
-    (typeof products)[0] | null
-  >(null);
+  const [quickViewProduct, setQuickViewProduct] = useState<(typeof products)[0] | null>(null);
+  const [activeProductIndex, setActiveProductIndex] = useState(3);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartBouncing, setCartBouncing] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const navScrolled = useNavbarScrolled();
+  const { toast, showToast } = useToast();
+
+  useScrollReveal(rootRef);
+
+  const handleAddToCart = useCallback((name: string) => {
+    showToast(name);
+    setCartBouncing(true);
+    setTimeout(() => setCartBouncing(false), 500);
+  }, [showToast]);
+
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+
+  const scrollToCollection = useCallback(() => {
+    document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   return (
-    <>
+    <div ref={rootRef}>
       {/* ── Navbar ── */}
-      <nav className="navbar">
+      <nav className={`navbar ${navScrolled ? "scrolled" : ""}`} role="navigation">
         <Link href="/" className="navbar-logo">
-          Aura<span> Candles</span>
+          Aura<span className="logo-dot" />
         </Link>
         <ul className="navbar-links">
-          <li>
-            <a href="#collection">Candles</a>
-          </li>
-          <li>
-            <a href="#gifts">Gifts</a>
-          </li>
-          <li>
-            <a href="#florals">Florals</a>
-          </li>
-          <li>
-            <a href="#about">Our Story</a>
-          </li>
+          <li><a href="#collection">Candles</a></li>
+          <li><a href="#gifts">Gifts</a></li>
+          <li><a href="#florals">Florals</a></li>
+          <li><a href="#about">Our Story</a></li>
         </ul>
         <div className="navbar-actions">
-          <button className="navbar-cart" aria-label="Shopping cart">
+          <button
+            className={`navbar-cart ${cartBouncing ? "bounce" : ""}`}
+            aria-label="Shopping cart"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
             Cart (0)
+          </button>
+          <button
+            className={`mobile-menu-btn ${mobileMenuOpen ? "open" : ""}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            <span /><span /><span />
           </button>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <HeroCarousel />
+      {/* Mobile nav */}
+      <div className={`mobile-nav ${mobileMenuOpen ? "open" : ""}`} role="dialog" aria-label="Mobile navigation">
+        <a href="#collection" onClick={closeMobileMenu}>Candles</a>
+        <a href="#gifts" onClick={closeMobileMenu}>Gifts</a>
+        <a href="#florals" onClick={closeMobileMenu}>Florals</a>
+        <a href="#about" onClick={closeMobileMenu}>Our Story</a>
+      </div>
 
-      {/* ── Marquee ── */}
+      {/* ── Hero ── */}
+      <HeroCarousel onShopClick={scrollToCollection} />
+
+      {/* ── Marquee strip ── */}
       <div className="marquee-section" aria-hidden="true">
         <div className="marquee-track">
           {Array.from({ length: 2 })
             .flatMap(() => marqueeItems)
             .map((text, i) => (
               <span key={i} className="marquee-item">
-                {text}
-                <span className="marquee-dot" />
+                {text}<span className="marquee-dot" />
               </span>
             ))}
         </div>
       </div>
 
-      {/* ── Signature Candles Collection ── */}
-      <section id="collection" className="collection-section">
-        <div className="collection-header">
-          <div>
-            <p className="section-eyebrow">Signature Collection</p>
-            <h2 className="section-title">
-              Curated for <em>Every Mood</em>
-            </h2>
-          </div>
-          <div className="collection-filters">
-            {["All", "Bestsellers", "New Arrivals", "Gifts"].map((f, i) => (
-              <button
-                key={f}
-                className={`filter-chip${i === 0 ? " active" : ""}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="collection-divider" />
-        <p className="section-sub" style={{ marginBottom: "3.5rem" }}>
-          Each candle is hand-poured with intention — crafted to fill your home
-          with warmth, memory, and beauty.
-        </p>
-
-        <div className="product-grid">
-          {products.map((p, i) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              index={i}
-              onQuickView={setQuickViewProduct}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features Strip ── */}
-      <div className="features-section">
+      {/* ── Features strip ── */}
+      <div className="features-section" role="list" aria-label="Our promises">
         {[
-          {
-            icon: "🌿",
-            title: "Natural Soy Wax",
-            desc: "100% clean-burning, sustainably sourced soy wax blend.",
-          },
-          {
-            icon: "🔥",
-            title: "Wood & Cotton Wicks",
-            desc: "Slow, even burns with a gentle, authentic crackle.",
-          },
-          {
-            icon: "🌸",
-            title: "Phthalate-Free",
-            desc: "Premium fragrance oils, safe for you and your home.",
-          },
-          {
-            icon: "♻️",
-            title: "Eco Packaging",
-            desc: "All packaging is recyclable or compostable.",
-          },
+          { icon: "🌿", title: "Natural Soy Wax", desc: "100% clean-burning, sustainably sourced soy wax blend." },
+          { icon: "🔥", title: "Wood & Cotton Wicks", desc: "Slow, even burns with an authentic gentle crackle." },
+          { icon: "🌸", title: "Phthalate-Free", desc: "Premium fragrance oils — safe for you and your home." },
+          { icon: "♻️", title: "Eco Packaging", desc: "All packaging is 100% recyclable or compostable." },
         ].map((feat) => (
-          <div key={feat.title} className="feature-item">
-            <div className="feature-icon">{feat.icon}</div>
+          <div key={feat.title} className="feature-item reveal" role="listitem">
+            <span className="feature-icon">{feat.icon}</span>
             <p className="feature-title">{feat.title}</p>
             <p className="feature-desc">{feat.desc}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Gift Shop ── */}
-      <GiftShopSection />
+      {/* ── Signature Collection ── */}
+      <section id="collection" className="collection-section">
+        <div className="collection-header">
+          <div className="reveal">
+            <p className="section-eyebrow">Signature Collection</p>
+            <h2 className="section-title">Curated for <em>Every Mood</em></h2>
+          </div>
+          <div className="collection-filters reveal reveal-delay-1">
+            {["All", "Bestsellers", "New Arrivals", "Gifts"].map((f, i) => (
+              <button key={f} className={`filter-chip${i === 0 ? " active" : ""}`}>{f}</button>
+            ))}
+          </div>
+        </div>
+        <p className="section-sub reveal" style={{ marginBottom: "2rem" }}>
+          Each candle is hand-poured with intention — crafted to fill your home with warmth, memory, and beauty.
+        </p>
+        <div style={{ marginBottom: "3rem", width: "100%", overflow: "hidden" }}>
+          <SocialCards 
+            cards={products.map(p => ({ imgUrl: p.images[0], alt: p.name }))} 
+            onActiveChange={setActiveProductIndex}
+            onCardClick={(index) => setQuickViewProduct(products[index])}
+          />
+        </div>
+        
+        {products[activeProductIndex] && (
+          <div className="reveal" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", maxWidth: "400px", margin: "0 auto 4rem auto" }}>
+            <p className="product-number" style={{ marginBottom: "0.5rem" }}>No. {String(activeProductIndex + 1).padStart(2, "0")}</p>
+            <h3 className="product-name" style={{ fontSize: "1.5rem", marginBottom: "0.25rem" }}>{products[activeProductIndex].name}</h3>
+            <p className="product-scent" style={{ marginBottom: "1rem" }}>{products[activeProductIndex].scent}</p>
+            
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.5rem", marginTop: "1rem", width: "100%" }}>
+              <span className="product-price" style={{ fontSize: "1.2rem", fontWeight: 500, color: "var(--text-main)" }}>{products[activeProductIndex].price}</span>
+              <button
+                className="btn-add"
+                onClick={() => handleAddToCart(products[activeProductIndex].name)}
+                aria-label={`Add ${products[activeProductIndex].name} to cart`}
+              >
+                Add to Cart
+              </button>
+            </div>
+            <button 
+              className="btn-secondary" 
+              style={{ marginTop: "1.5rem", fontSize: "0.8rem", padding: "0.5rem 1.25rem", borderRadius: "100px", border: "1px solid var(--border-light)", color: "var(--text-muted)" }}
+              onClick={() => setQuickViewProduct(products[activeProductIndex])}
+            >
+              Quick View
+            </button>
+          </div>
+        )}
+      </section>
 
-      {/* ── Floral Arrangements ── */}
-      <FloralSection />
+      {/* ── Gift Shop ── */}
+      <section id="gifts" className="giftshop-section">
+        <div className="giftshop-header">
+          <div className="reveal">
+            <p className="section-eyebrow">The Gift Shop</p>
+            <h2 className="section-title">Give the Gift of <em>Glow</em></h2>
+          </div>
+          <p className="section-sub reveal reveal-delay-1">
+            Thoughtfully curated accessories and sets — because the best gifts come wrapped in warmth.
+          </p>
+        </div>
+        <div className="giftshop-grid">
+          <div className="giftshop-featured reveal">
+            <GiftCard product={giftProducts[0]} onAddToCart={handleAddToCart} />
+          </div>
+          <div className="giftshop-stack">
+            <div className="reveal reveal-delay-1">
+              <GiftCard product={giftProducts[1]} onAddToCart={handleAddToCart} />
+            </div>
+            <div className="reveal reveal-delay-2">
+              <GiftCard product={giftProducts[2]} onAddToCart={handleAddToCart} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Florals ── */}
+      <section id="florals" className="floral-section">
+        <div className="floral-header reveal">
+          <p className="section-eyebrow">Botanical Studio</p>
+          <h2 className="section-title">Floral <em>Arrangements</em></h2>
+          <p className="section-sub">
+            Hand-selected blooms and dried botanicals — each arrangement is a living work of art for your space.
+          </p>
+        </div>
+        <div className="floral-grid">
+          {floralProducts.map((p, i) => (
+            <article key={p.id} className={`floral-card reveal reveal-delay-${i + 1}`}>
+              <div className="floral-card-img-wrap">
+                <Image
+                  src={p.image}
+                  alt={p.name}
+                  fill
+                  loading="lazy"
+                  className="floral-card-img"
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                />
+              </div>
+              <div className="floral-card-info">
+                <span className="floral-card-botanical">{p.botanical}</span>
+                <h3 className="floral-card-name">{p.name}</h3>
+                <p className="floral-card-desc">{p.description}</p>
+                <div className="floral-card-bottom">
+                  <span className="floral-card-price">{p.price}</span>
+                  <button className="btn-add-floral" onClick={() => handleAddToCart(p.name)}>Add to Cart</button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {/* ── About ── */}
       <section id="about" className="about-section">
         <div className="about-img-side">
           <Image
             src="/candles/candle4.png"
-            alt="The Aura Candles story — candles being hand-poured"
+            alt="Hand-pouring candles at Aura studio"
             fill
+            loading="lazy"
             className="about-img"
             sizes="50vw"
           />
         </div>
         <div className="about-content-side">
-          <p className="section-eyebrow">Our Story</p>
-          <h2 className="section-title">
-            Made with care,
-            <br />
+          <p className="section-eyebrow reveal">Our Story</p>
+          <h2 className="section-title reveal">
+            Made with care,<br />
             <em>lit with love.</em>
           </h2>
-          <p className="about-body">
-            Aura began as a small kitchen project inspired by the belief that a
-            single flickering candle can transform a room — and a mood. Every
-            candle in our collection is hand-poured in small batches using 100%
-            natural soy wax, sustainably sourced botanicals, and the finest
-            fragrance oils.
+          <p className="about-body reveal">
+            Aura began as a small kitchen project inspired by the belief that a single flickering candle
+            can transform a room — and a mood. Every candle in our collection is hand-poured in small
+            batches using 100% natural soy wax, sustainably sourced botanicals, and the finest fragrance oils.
           </p>
-          <div className="about-stat-row">
+          <div className="about-stat-row reveal">
             {[
               { num: "6+", label: "Years of craft" },
               { num: "40k", label: "Happy homes" },
@@ -736,96 +866,79 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <a
-            href="#"
-            className="btn-primary"
-            style={{ alignSelf: "flex-start", marginTop: "1rem" }}
+          <button
+            className="btn-primary reveal"
+            style={{ alignSelf: "flex-start" }}
+            onClick={scrollToCollection}
           >
-            Discover More
-          </a>
+            Shop Now →
+          </button>
         </div>
       </section>
 
       {/* ── Footer ── */}
       <footer className="footer">
         <div>
-          <p className="footer-logo">
-            Aura<span> Candles</span>
-          </p>
+          <p className="footer-logo">Aura<span className="logo-dot" /></p>
           <p className="footer-desc">
-            Handcrafted luxury scents, curated gifts, and botanical arrangements
-            — designed to transform your everyday moments into something
-            extraordinary.
+            Handcrafted luxury scents, curated gifts, and botanical arrangements — designed to
+            transform your everyday moments into something extraordinary.
           </p>
           <div className="footer-social">
-            <a href="#">Instagram</a>
-            <a href="#">Pinterest</a>
-            <a href="#">TikTok</a>
+            <a href="#" aria-label="Instagram">Instagram</a>
+            <a href="#" aria-label="Pinterest">Pinterest</a>
+            <a href="#" aria-label="TikTok">TikTok</a>
           </div>
         </div>
         <div>
           <p className="footer-heading">Shop</p>
           <ul className="footer-links">
-            <li>
-              <a href="#collection">Candles</a>
-            </li>
-            <li>
-              <a href="#gifts">Gift Shop</a>
-            </li>
-            <li>
-              <a href="#florals">Florals</a>
-            </li>
-            <li>
-              <a href="#">Accessories</a>
-            </li>
+            <li><a href="#collection">Candles</a></li>
+            <li><a href="#gifts">Gift Shop</a></li>
+            <li><a href="#florals">Florals</a></li>
+            <li><a href="#">Accessories</a></li>
           </ul>
         </div>
         <div>
           <p className="footer-heading">Contact</p>
           <ul className="footer-links">
-            <li>
-              <a href="#">hello@auracandles.com</a>
-            </li>
-            <li>
-              <a href="#">+1 (555) 000-0000</a>
-            </li>
-            <li>
-              <a href="#">Press Enquiries</a>
-            </li>
+            <li><a href="#">hello@auracandles.com</a></li>
+            <li><a href="#">+1 (555) 000-0000</a></li>
+            <li><a href="#">Press Enquiries</a></li>
           </ul>
         </div>
         <div>
           <p className="footer-heading">Policies</p>
           <ul className="footer-links">
-            <li>
-              <a href="#">Shipping</a>
-            </li>
-            <li>
-              <a href="#">Returns</a>
-            </li>
-            <li>
-              <a href="#">Privacy</a>
-            </li>
-            <li>
-              <a href="#">Terms</a>
-            </li>
+            <li><a href="#">Shipping</a></li>
+            <li><a href="#">Returns</a></li>
+            <li><a href="#">Privacy</a></li>
+            <li><a href="#">Terms</a></li>
           </ul>
+        </div>
+        <div className="footer-newsletter">
+          <p className="footer-newsletter-text">Stay in the loop — get offers & new arrivals.</p>
+          <div className="footer-newsletter-form">
+            <input type="email" className="footer-newsletter-input" placeholder="your@email.com" aria-label="Email for newsletter" />
+            <button className="footer-newsletter-btn" type="button">Subscribe</button>
+          </div>
         </div>
       </footer>
       <div className="footer-bottom">
-        <span>
-          © {new Date().getFullYear()} Aura Candles. All rights reserved.
-        </span>
+        <span>© {new Date().getFullYear()} Aura Candles. All rights reserved.</span>
         <span>Handpoured with ♡ in small batches.</span>
       </div>
 
-      {/* ── Quick View Modal ── */}
+      {/* ── Modals & Notifications ── */}
       {quickViewProduct && (
         <QuickViewPanel
           product={quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
+          onAddToCart={handleAddToCart}
         />
       )}
-    </>
+      <NewsletterPopup />
+      {toast && <Toast msg={toast.msg} />}
+    </div>
   );
 }
