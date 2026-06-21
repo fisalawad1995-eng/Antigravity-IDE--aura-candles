@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Aura Candles — Handcrafted Luxury Scents",
-  description: "Discover Aura Candles — premium handcrafted scented candles designed to transform your space with warmth, light, and artisan fragrance.",
+  title: "Aura — Candles, Gifts & Florals | Handcrafted Luxury",
+  description: "Discover Aura — premium handcrafted candles, curated gift sets, and botanical floral arrangements. Transform your space with warmth, light, and artisan fragrance.",
 };
 
 export default function RootLayout({
@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>{children}</body>
     </html>
   );
 }
